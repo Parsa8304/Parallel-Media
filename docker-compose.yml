@@ -1,0 +1,26 @@
+# docker-compose.yml
+
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Psocial:/app
+    env_file:
+      - .env
+    depends_on:
+      - db
+    command: python manage.py runserver 0.0.0.0:8000  # Development server
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=social_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=09364023671
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
