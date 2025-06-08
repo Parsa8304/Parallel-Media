@@ -1,22 +1,43 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from .throttling import InteractionThrottle
 from django.db.models import Q
+from django.contrib.auth.models import User
+from rest_framework_simplejwt.tokens import RefreshToken
+from .permissions import IsUniverseMemberOrPublic
 from ps_app.models import Persona, Post, TextPost, ImagePost, ArtifactPost, Comment, Like, Clash, UniverseMerge
 from .serializers import (
     PersonaSerializer, PostPolymorphicSerializer, TextPostSerializer, ImagePostSerializer,
     ArtifactPostSerializer, CommentSerializer, LikeSerializer, ClashSerializer, UniverseMergeSerializer
 )
 
-class IsUniverseMemberOrPublic(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        if obj.is_public:
-            return True
-        return obj.persona.universe == request.user.persona.universe
 
-class InteractionThrottle(UserRateThrottle):
-    rate = '100/day'
+class UserRegisterView(APIView):
+    """
+    View to handle user registration.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        if not username or not password:
+            return Response({'error': 'Username and password are required.'}, status=400)
+        
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already exists.'}, status=400)
+        
+        user = User.objects.create_user(username=username, password=password)
+        
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }, status=status.HTTP_201_CREATED)
+
 
 class PersonaViewSet(viewsets.ModelViewSet):
     queryset = Persona.objects.all()

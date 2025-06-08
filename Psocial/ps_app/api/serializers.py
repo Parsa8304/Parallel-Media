@@ -1,21 +1,26 @@
 from rest_framework import serializers
 from rest_polymorphic.serializers import PolymorphicSerializer
-from models import Persona, Post, TextPost, ImagePost, ArtifactPost, Comment, Like, Clash, UniverseMerge
+from ps_app.models import Persona, Post, TextPost, ImagePost, ArtifactPost, Comment, Like, Clash, UniverseMerge
 from django.contrib.auth.models import User
 
 
 
-class UserSerializers(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username']
 
 class PersonaSerializer(serializers.ModelSerializer):
-    user = UserSerializers(read_only=True)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = Persona
         fields = ['id', 'user', 'universe', 'backstory', 'avatar', 'tags', 'created_at']
+
+class PostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ['id', 'persona', 'created_at', 'updated_at', 'is_public']
 
 class TextPostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,6 +39,7 @@ class ArtifactPostSerializer(serializers.ModelSerializer):
 
 class PostPolymorphicSerializer(PolymorphicSerializer):
     model_serializer_mapping = {
+        Post: PostSerializer,
         TextPost: TextPostSerializer,
         ImagePost: ImagePostSerializer,
         ArtifactPost: ArtifactPostSerializer,
